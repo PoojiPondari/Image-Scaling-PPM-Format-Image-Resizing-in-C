@@ -1,0 +1,118 @@
+/* Programming Assignment - 1
+Name: Poojita Sai Sukanya Pondari
+Student ID: 11696625
+Compiler Used: Visual Studio */
+
+#include <stdio.h>
+#include "PPMTools.h"
+
+#define MAX_FILENAME_LENGTH 20
+
+// Function declarations
+void createSmallerImage(unsigned char *pooj_original, unsigned char *pooj_small, int originalWidth, int originalHeight);
+void createLargerImage(unsigned char *pooj_original, unsigned char *pooj_large, int originalWidth, int originalHeight);
+void initializeWhiteBackground(unsigned char *image, int width, int height);
+
+int main() {
+    unsigned char *pooj_original;
+    unsigned char *pooj_small;
+    unsigned char *pooj_large;
+    int width, height;
+    char inputFilename[MAX_FILENAME_LENGTH];
+
+    // Get the input image file name from the user
+    printf("Enter the image filename (.ppm format): ");
+    scanf("%s", inputFilename);
+
+    // Load the image from the provided file
+    pooj_original = ReadPPM(inputFilename, &width, &height);
+    if (pooj_original == NULL) {
+        printf("Error: Could not load the image.\n");
+        return 1;
+    }
+
+    // Allocate memory for the reduced and enlarged images
+    pooj_small = CreatePPM(width / 2, height / 2);  // Image reduced to a quarter of the size
+    pooj_large = CreatePPM(width * 2, height * 2);  // Image enlarged to four times the size
+
+    // Initialize both output images to a white background
+    initializeWhiteBackground(pooj_small, width / 2, height / 2);
+    initializeWhiteBackground(pooj_large, width * 2, height * 2);
+
+    // Create smaller and larger versions of the image
+    createSmallerImage(pooj_original, pooj_small, width, height);
+    createLargerImage(pooj_original, pooj_large, width, height);
+
+    // Save the reduced and enlarged images
+    WritePPM("pooj_small_image.ppm", pooj_small, height / 2, width / 2);
+    WritePPM("pooj_large_image.ppm", pooj_large, height * 2, width * 2);
+
+    return 0;
+}
+
+// Function to create a smaller image (reduced to a quarter of the original size)
+void createSmallerImage(unsigned char *pooj_original, unsigned char *pooj_small, int originalWidth, int originalHeight) {
+    for (int row = 0; row < originalHeight / 2; row++) {
+        for (int col = 0; col < originalWidth / 2; col++) {
+            // Calculate the average of 2x2 pixel block
+            int avgRed = (GetRPixel(pooj_original, originalWidth, 2 * col, 2 * row) +
+                          GetRPixel(pooj_original, originalWidth, 2 * col + 1, 2 * row) +
+                          GetRPixel(pooj_original, originalWidth, 2 * col, 2 * row + 1) +
+                          GetRPixel(pooj_original, originalWidth, 2 * col + 1, 2 * row + 1)) / 4;
+
+            int avgGreen = (GetGPixel(pooj_original, originalWidth, 2 * col, 2 * row) +
+                            GetGPixel(pooj_original, originalWidth, 2 * col + 1, 2 * row) +
+                            GetGPixel(pooj_original, originalWidth, 2 * col, 2 * row + 1) +
+                            GetGPixel(pooj_original, originalWidth, 2 * col + 1, 2 * row + 1)) / 4;
+
+            int avgBlue = (GetBPixel(pooj_original, originalWidth, 2 * col, 2 * row) +
+                           GetBPixel(pooj_original, originalWidth, 2 * col + 1, 2 * row) +
+                           GetBPixel(pooj_original, originalWidth, 2 * col, 2 * row + 1) +
+                           GetBPixel(pooj_original, originalWidth, 2 * col + 1, 2 * row + 1)) / 4;
+
+            // Set the averaged pixel color in the smaller image
+            PutRPixel(pooj_small, originalWidth / 2, col, row, avgRed);
+            PutGPixel(pooj_small, originalWidth / 2, col, row, avgGreen);
+            PutBPixel(pooj_small, originalWidth / 2, col, row, avgBlue);
+        }
+    }
+}
+
+// Function to create a larger image (enlarged to four times the original size)
+void createLargerImage(unsigned char *pooj_original, unsigned char *pooj_large, int originalWidth, int originalHeight) {
+    for (int row = 0; row < originalHeight; row++) {
+        for (int col = 0; col < originalWidth; col++) {
+            // Get the color of the current pixel from the original image
+            int red = GetRPixel(pooj_original, originalWidth, col, row);
+            int green = GetGPixel(pooj_original, originalWidth, col, row);
+            int blue = GetBPixel(pooj_original, originalWidth, col, row);
+
+            // Assign this pixel color to a 2x2 block in the larger image
+            PutRPixel(pooj_large, originalWidth * 2, 2 * col, 2 * row, red);
+            PutRPixel(pooj_large, originalWidth * 2, 2 * col + 1, 2 * row, red);
+            PutRPixel(pooj_large, originalWidth * 2, 2 * col, 2 * row + 1, red);
+            PutRPixel(pooj_large, originalWidth * 2, 2 * col + 1, 2 * row + 1, red);
+
+            PutGPixel(pooj_large, originalWidth * 2, 2 * col, 2 * row, green);
+            PutGPixel(pooj_large, originalWidth * 2, 2 * col + 1, 2 * row, green);
+            PutGPixel(pooj_large, originalWidth * 2, 2 * col, 2 * row + 1, green);
+            PutGPixel(pooj_large, originalWidth * 2, 2 * col + 1, 2 * row + 1, green);
+
+            PutBPixel(pooj_large, originalWidth * 2, 2 * col, 2 * row, blue);
+            PutBPixel(pooj_large, originalWidth * 2, 2 * col + 1, 2 * row, blue);
+            PutBPixel(pooj_large, originalWidth * 2, 2 * col, 2 * row + 1, blue);
+            PutBPixel(pooj_large, originalWidth * 2, 2 * col + 1, 2 * row + 1, blue);
+        }
+    }
+}
+
+// Function to initialize the image with a white background
+void initializeWhiteBackground(unsigned char *image, int width, int height) {
+    for (int row = 0; row < height; row++) {
+        for (int col = 0; col < width; col++) {
+            PutRPixel(image, width, col, row, 255);
+            PutGPixel(image, width, col, row, 255);
+            PutBPixel(image, width, col, row, 255);
+        }
+    }
+}
